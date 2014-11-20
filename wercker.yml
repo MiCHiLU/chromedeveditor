@@ -1,0 +1,47 @@
+box: michilu/dart-chrome-app
+build:
+  # The steps that will be executed on build.
+  steps:
+
+    - script:
+        name: Get our packages.
+        code: |-
+          cd ide
+          pub get
+
+    - script:
+        name: Test the project.
+        code: |-
+          cd ide
+          ./grind mode-test
+
+    # which is required for tests that require an GUI.
+    - script:
+        name: Enable virtual display.
+        code: |-
+          # Start xvfb which gives the context an virtual display.
+          start-stop-daemon --start --quiet --pidfile /tmp/xvfb_99.pid --make-pidfile --background --exec /usr/bin/Xvfb -- :99 -screen 0 1024x768x24 -ac +extension GLX +render -noreset
+          # Give xvfb time to start. 3 seconds is the default for all xvfb-run commands.
+          sleep 3
+
+    - script:
+        name: Turn on fast fail for the bash script.
+        code: |-
+          set -e
+
+    - script:
+        name: Run tests on the Dart version of the app.
+        code: |-
+          cd ide
+          dart tool/test_runner.dart --dartium
+
+    - script:
+        name: Run tests on the dart2js version of the app.
+        code: |-
+          cd ide
+          dart tool/test_runner.dart --chrome-dev
+
+    - script:
+        name: Output the project.
+        code: |-
+          rsync -avz $WERCKER_SOURCE_DIR/ $WERCKER_OUTPUT_DIR
